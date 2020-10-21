@@ -1,0 +1,208 @@
+const MAX_DISTRACTORS = 4;
+const MAX_QUESTIONS = 40
+const QUIZ_NAME = 'TOGAF Quiz'
+
+function popForm() {
+
+ 
+
+  var ss = SpreadsheetApp.getActive();
+  
+  var sheet = ss.getSheetByName('Sheet1');
+
+  var numberRows = sheet.getDataRange().getNumRows();
+
+ 
+
+  // Read the sheet data into 3 arrays.  Would be better practice (faster performance) to read all into 1 array and divide as needed).  
+
+  var myQuestions = sheet.getRange(2,1,numberRows,1).getValues();
+
+  var myAnswers = sheet.getRange(2,2,numberRows,1).getValues();
+
+  var myGuesses = sheet.getRange(2,2,numberRows,5).getValues();
+
+  
+  
+  var myShuffled = myGuesses.map(shuffleEachRow);
+  
+  var randomMoves = Array.from({length: 40}, () => Math.floor(Math.random() * 40));//overcome the fact javascript doesn't have random seed.
+  
+  myQuestions = shuffleArrayR(myQuestions, randomMoves)
+  myAnswers = shuffleArrayR(myAnswers, randomMoves)
+  myGuesses = shuffleArrayR(myGuesses, randomMoves)
+  myShuffled = shuffleArrayR(myShuffled, randomMoves)
+
+// Create the form as a quiz.  The resulting form's "Quiz options" are different from a manually created quiz.  Be aware (and change manually if needed!
+
+  var form = FormApp.create(QUIZ_NAME);
+
+  form.setIsQuiz(true);
+
+  // Write out each multiple choice question to the form.
+
+  for(var i=1;i<=MAX_QUESTIONS;i++){
+    answers = myAnswers[i][0].split("|")
+    var addItem = form.addMultipleChoiceItem();
+    var feedback = FormApp.createFeedback()
+    .setText("Correct answer is:" + answers )
+    
+    addItem.setTitle(myQuestions[i][0])
+     .setPoints(1)
+    addItem.setFeedbackForIncorrect(feedback.build())
+    
+    if (answers.includes(myShuffled[i][0])) {
+
+      addItem.setChoices([
+
+        addItem.createChoice(myShuffled[i][0],true),
+
+        addItem.createChoice(myShuffled[i][1]),
+
+        addItem.createChoice(myShuffled[i][2]),
+
+        addItem.createChoice(myShuffled[i][3]),
+
+        addItem.createChoice(myShuffled[i][4])
+
+      ]);
+
+    }
+
+    else if (answers.includes(myShuffled[i][1])) {
+
+      addItem.setChoices([
+
+        addItem.createChoice(myShuffled[i][0]),
+
+        addItem.createChoice(myShuffled[i][1],true),
+
+        addItem.createChoice(myShuffled[i][2]),
+
+        addItem.createChoice(myShuffled[i][3]),
+
+        addItem.createChoice(myShuffled[i][4])
+
+      ]);
+
+    }
+
+    else if (answers.includes(myShuffled[i][2])) {
+
+        addItem.setChoices([
+
+        addItem.createChoice(myShuffled[i][0]),
+
+        addItem.createChoice(myShuffled[i][1]),
+
+        addItem.createChoice(myShuffled[i][2],true),
+
+        addItem.createChoice(myShuffled[i][3]),
+
+        addItem.createChoice(myShuffled[i][4])
+
+      ]);
+
+    }
+
+    else if (answers.includes(myShuffled[i][3])) {
+
+      addItem.setChoices([
+
+        addItem.createChoice(myShuffled[i][0]),
+
+        addItem.createChoice(myShuffled[i][1]),
+
+        addItem.createChoice(myShuffled[i][2]),
+
+        addItem.createChoice(myShuffled[i][3],true),
+
+        addItem.createChoice(myShuffled[i][4])
+
+      ]);
+
+    }
+
+    else {
+
+
+      addItem.setChoices([
+
+        addItem.createChoice(myShuffled[i][0]),
+
+        addItem.createChoice(myShuffled[i][1]),
+
+        addItem.createChoice(myShuffled[i][2]),
+
+        addItem.createChoice(myShuffled[i][3]),
+
+        addItem.createChoice(myShuffled[i][4],true)
+
+      ]);
+
+    }
+
+
+  }
+
+}
+
+var randomNumber = function ( max ) {  return Math.floor(Math.random() * (max + 1));}
+
+function randomFill( array, distractors, length ) {
+  var newDistractor = ""
+  
+  while ( array.length < length && distractors.length >= 1){
+    newDistractor = distractors[randomNumber(distractors.length -1)]
+    array.push(newDistractor)
+    distractors = distractors.filter(function(needle){ return needle != newDistractor ;}) // remove distractor we already used to ensure no duplicates
+  }
+  return array
+}
+
+// hack to ensure arrays are moved according to (random seed) array
+function shuffleArrayR(array, randomNumbers){
+  var i, j, temp, sizeOfArray; 
+  sizeOfArray = array.length - 1;
+  
+   for (i = sizeOfArray; i > 0; i--) {
+
+    j = randomNumbers[i]
+    temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+
+  }
+
+  return array;
+}
+
+
+function shuffleArray(array){
+  var i, j, temp, sizeOfArray; 
+  sizeOfArray = array.length - 1;
+   for (i = sizeOfArray; i >= 0; i--) {
+
+    j = randomNumber(sizeOfArray)
+    temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+
+  }
+
+  return array;
+}
+
+function shuffleEachRow(array) {
+
+  var newAnswers = [];
+  var distractors = array[1].split("|")
+  var theAnswer = randomFill( [] , array[0].split("|"), 1)[0] // randomly pick a correct answer
+
+  distractors = distractors.filter(function(needle){ return needle != theAnswer;}) //filter out the answre from the distractors incase it's included in them.
+  
+  newAnswers.push( theAnswer ) // the answer must be included
+  newAnswers = randomFill( newAnswers , distractors, MAX_DISTRACTORS + 1) // add more options up to 5
+  return shuffleArray(newAnswers);
+  
+}
