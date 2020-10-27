@@ -1,14 +1,19 @@
 const MAX_DISTRACTORS = 4;
 const MAX_QUESTIONS = 40
 const QUIZ_NAME = 'TOGAF Quiz'
+const SHEET_NAME = 'Sheet1'
+const FILTER_OUT = ''
+const CATEGORY = 3
 
 function popForm() {
 
  
 
   var ss = SpreadsheetApp.getActive();
-  
-  var sheet = ss.getSheetByName('Sheet1');
+
+  // var sheet = ss.getActiveSheet();
+
+  var sheet = ss.getSheetByName(SHEET_NAME);
 
   var numberRows = sheet.getDataRange().getNumRows();
 
@@ -26,7 +31,7 @@ function popForm() {
   
   var myShuffled = myGuesses.map(shuffleEachRow);
   
-  var randomMoves = Array.from({length: 40}, () => Math.floor(Math.random() * 40));//overcome the fact javascript doesn't have random seed.
+  var randomMoves = Array.from({length: numberRows}, () => Math.floor(Math.random() * numberRows));//overcome the fact javascript doesn't have random seed.
   
   myQuestions = shuffleArrayR(myQuestions, randomMoves)
   myAnswers = shuffleArrayR(myAnswers, randomMoves)
@@ -41,7 +46,12 @@ function popForm() {
 
   // Write out each multiple choice question to the form.
 
-  for(var i=1;i<=MAX_QUESTIONS;i++){
+  for(var i=1,j=1;j<=MAX_QUESTIONS;j++,i++){
+    
+    debugger
+    while (myGuesses[i][CATEGORY]==FILTER_OUT){  // potential issue if you run out of questions 
+      i++
+    }
     answers = myAnswers[i][0].split("|")
     var addItem = form.addMultipleChoiceItem();
     var feedback = FormApp.createFeedback()
